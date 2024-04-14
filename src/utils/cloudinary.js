@@ -2,16 +2,22 @@ import {v2 as cloudinary} from 'cloudinary';
 import { response } from 'express';
 import fs from "fs"
           
-cloudinary.config({ 
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-  api_key: process.env.CLOUDINARY_API_KEY, 
-  api_secret: process.env.CLOUDINARY_API_SECRET 
-});
+// cloudinary.config({ 
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+//   api_key: process.env.CLOUDINARY_API_KEY, 
+//   api_secret: process.env.CLOUDINARY_API_SECRET 
+// });
+
+cloudinary.config({
+    cloud_name: "drq7ygoyz",
+    api_key: "678972762147439",
+    api_secret: "yo9Dvc37rROJmsBFjmSOwV08nSs"
+})
 
 const uploadToCloudinary = async (localpath) => {
     if(!localpath) return null
     try {
-        const rresponse = await cloudinary.uploader.upload(localpath,{}, function(error, result) {console.log(result); });
+        const response = await cloudinary.uploader.upload(localpath,{}, function(error, result) {console.log(result); });
         console.log(response.url);
         return response
     } catch (error) {
