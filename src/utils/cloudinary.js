@@ -17,8 +17,7 @@ cloudinary.config({
 const uploadToCloudinary = async (localpath) => {
     if(!localpath) return null
     try {
-        const response = await cloudinary.uploader.upload(localpath,{}, function(error, result) {console.log(result); });
-        console.log(response.url);
+        const response = await cloudinary.uploader.upload(localpath,{}, function(error, result) {});
         await fs.unlinkSync(localpath)
         return response
     } catch (error) {

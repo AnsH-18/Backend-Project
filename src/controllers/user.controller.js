@@ -298,6 +298,130 @@ const changeCoverImage = asyncHandler(async(req, res) => {
     )
 })
 
+const getChannelDetails = asyncHandler(async(req, res) => {
+    const {userName} = req.query
+
+    if(!userName.trim()){
+        throw new ApiError(404, "Channel Not Found")
+    }
+   
+    const user = await User.findOne({userName: userName.toLowerCase()})
+    console.log(userName.toLowerCase().trim() === user.userName);
+
+    const channelDetails = await User.aggregate([
+        {
+            $match: {
+                userName : userName.toLowerCase().trim()
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscriberCount: {
+                    $size: "$subscribers"
+                },
+                subscriberToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in : [req.user?._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },{
+            $project: {
+                fullName: 1,
+                userName: 1,
+                email: 1,
+                avatar: 1,
+                coverImage: 1,
+                subscriberCount: 1,
+                subscriberToCount: 1,
+                subscribers: 1,
+                subscribedTo: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+
+   if(!channelDetails){
+    throw new ApiError(404, "Channel Not Found")
+   }
+   return res.status(200).json(
+    new ApiResponse(200, channelDetails, "Channel Details Fetched Successfully")
+   )
+})
+
+const getWatchHistory = asyncHandler(async(req, res) => {
+    const {user} = req
+
+    if(!user){
+        throw new ApiError(400, "Problem While Fetching Watch history for This user")
+    }
+    
+    const watchHistory = await User.aggregate([
+        {
+            $match: {
+                _id: user._id
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "UserWatchHistory",
+                pipeline: [{
+                    $lookup: {
+                        from: "users",
+                        localField: "owner",
+                        foreignField: "_id",
+                        as: "owner"
+                    }
+                }]
+            }
+        },{
+            $addFields: {
+                UserwatchHistory: "$UserWatchHistory"
+            }
+        },{
+            $project: {
+                fullName: 1,
+                userName: 1,
+                UserwatchHistory: 1,
+                avatar: 1,     
+                coverImage: 1
+            }
+        }
+    ])
+
+    if(!watchHistory){
+        throw new ApiError(404, "Error While fetching Watch History")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, watchHistory, "Watch History fetched Successfully")
+    )
+})
+
 export {
 
 userRegister, 
@@ -308,6 +432,8 @@ changePassword,
 changeAccountDetails,
 getCurrentUser,
 changeAvatar,
-changeCoverImage
+changeCoverImage,
+getChannelDetails,
+getWatchHistory
 
 }
